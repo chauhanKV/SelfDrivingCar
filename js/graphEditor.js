@@ -1,7 +1,8 @@
 class GraphEditor{
-    constructor(canvas, graph)
+    constructor(viewPort, graph)
     {
-        this.canvas = canvas;
+        this.viewPort = viewPort;
+        this.canvas = viewPort.canvas;
         this.graph = graph;
 
         this.ctx = this.canvas.getContext("2d");
@@ -16,47 +17,51 @@ class GraphEditor{
 
     #addEventListeners()
     {
-        this.canvas.addEventListener("mousedown", (event) => {
-            if(event.button == 2) // right click
-            {
-                if(this.hovered)
-                {
-                    this.#removePoint(this.hovered);
-                }
-                else
-                {
-                    this.selected = null;
-                }
-            }
+        this.canvas.addEventListener("mousedown", this.#handleMouseDown.bind(this));
+        this.canvas.addEventListener("mousemove", this.#handleMouseMove.bind(this));
+        this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+        this.canvas.addEventListener("mouseup", () => this.dragging = false);
+    }
 
-            if(event.button == 0) // left click
-            {
-                this.hovered = getNearestPoint(this.mouse, this.graph.points, 15);
-                if(this.hovered)
-                {
-                    this.#select(this.hovered);
-                    this.dragging = true;
-                    return;
-                }
-                this.graph.addPoint(this.mouse);
-                // Add Segment between previously selected point and new point
-                this.#select(this.mouse);
-                this.hovered = this.mouse;
-            }
-        });
-
-        this.canvas.addEventListener("mousemove", (event) => {
-            this.mouse = new Point(event.offsetX, event.offsetY);
-            this.hovered = getNearestPoint(this.mouse, this.graph.points, 15);
+    #handleMouseMove(event)
+    {
+        this.mouse = this.viewPort.getMouse(event);
+            this.hovered = getNearestPoint(this.mouse, this.graph.points, 15 * this.viewPort.zoom);
             if(this.dragging)
             {
                 this.selected.x = this.mouse.x;
                 this.selected.y = this.mouse.y;
             }
-        });
-        this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
-        this.canvas.addEventListener("mouseup", () => this.dragging = false);
+    }
 
+    #handleMouseDown(event)
+    {
+        if(event.button == 2) // right click
+        {
+            if(this.hovered)
+            {
+                this.#removePoint(this.hovered);
+            }
+            else
+            {
+                this.selected = null;
+            }
+        }
+
+        if(event.button == 0) // left click
+        {
+            this.hovered = getNearestPoint(this.mouse, this.graph.points, 15);
+            if(this.hovered)
+            {
+                this.#select(this.hovered);
+                this.dragging = true;
+                return;
+            }
+            this.graph.addPoint(this.mouse);
+            // Add Segment between previously selected point and new point
+            this.#select(this.mouse);
+            this.hovered = this.mouse;
+        }
     }
 
     display()
